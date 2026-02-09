@@ -1,82 +1,121 @@
-## Query Review Add-on: Index Scan & Slow Query Pattern Match (MANDATORY)
+1) Template MD (Query-only)
+# QUERY REVIEW — INDEX SCAN + SLOW PATTERN (AI OUTPUT)
 
-This section applies when reviewing SQL/FlexibleSearch queries.
 
-### A) Index Scan Check (Evidence-first)
+## INPUT (MANDATORY)
 
-#### Rule A1 — Evidence Required for Certainty
-You MUST NOT claim "uses index scan" / "full table scan" as a fact unless an execution plan is provided.
-Valid evidence:
-- `EXPLAIN` / `EXPLAIN ANALYZE` output
-- DB execution plan screenshot/text
-- Dynatrace/DB monitoring showing plan/hash
 
-If evidence is NOT provided, you must output a likelihood assessment only.
+### Query Under Review
+- **Query ID:** `<free text>`
+- **Query Type:** `SQL | FlexibleSearch`
+- **Query Text:**
+```sql
+<paste query here>
+DB / Engine Context
 
-#### Output (MANDATORY)
-For each reviewed query, output:
+DB Vendor (if known): <MySQL | MariaDB | Postgres | Oracle | MSSQL | HANA | Unknown>
 
-- **Index Scan Evidence:** `PROVIDED | NOT_PROVIDED`
-- **Index Scan Result:** `INDEX_SCAN | FULL_SCAN | UNKNOWN`  
-  (Use `UNKNOWN` when NOT_PROVIDED)
-- **Index Scan Likelihood:** `HIGH | MEDIUM | LOW` (required when NOT_PROVIDED)
-- **Reasoning:** `<concrete reasons based on query structure>`
-- **Action:** `<exact steps to verify/improve>`
+Hot Path Context: <request | cronjob | batch | OCC | promo | unknown>
 
-#### Heuristics for Likelihood (when NOT_PROVIDED)
-Increase FULL_SCAN risk if any of the following is present:
-- Function applied on indexed column in WHERE/JOIN: `LOWER(col)`, `DATE(col)`, `CAST(col)`, `SUBSTR(col)`, etc.
-- Leading wildcard: `LIKE '%abc'`
-- OR conditions across different columns without supporting indexes
-- Missing/ineffective WHERE predicates (broad filter)
-- Join keys are not PK/unique or look non-indexed (code/uid without index)
-- Large LEFT JOIN chains + DISTINCT + wide SELECT
-- ORDER BY on non-indexed column, especially with LIMIT missing
-- Query filters on low-selectivity column only (status=1 without other filters)
-- Subqueries in hot path
+Estimated Result Size: <small | medium | large | unknown>
 
-Suggested Actions:
-- Ask for `EXPLAIN` plan for the exact query with representative params
-- Check indexes for join columns + where predicates
-- Rewrite predicates to avoid functions on columns
-- Add pagination / LIMIT where applicable
-- Reduce join breadth, remove redundant joins, narrow selected columns
+Execution Plan Evidence (Optional but preferred)
 
----
+If available, paste one:
 
-### B) Slow Query Pattern Match (Template-driven)
+EXPLAIN / EXPLAIN ANALYZE output
 
-#### Rule B1 — Slow Query Templates Input
-If the review template provides "Slow Query Patterns" (reference queries), you MUST compare the PR query against them.
+query plan text
 
-#### Output (MANDATORY)
-For each reviewed query, output:
+monitoring plan snippet
 
-- **Slow Pattern Evidence:** `PROVIDED | NOT_PROVIDED`
-- **Similar To Slow Pattern:** `YES | NO | UNKNOWN`
-- **Matched Pattern ID:** `<pattern name/id>` or `N/A`
-- **Similarity Reason:** `<concrete mapping: joins/where/group/distinct>`
-- **Risk Level:** `LOW | MEDIUM | HIGH`
-- **Recommendation:** `<rewrite / index / split query / caching / pagination>`
+<paste explain/plan here or leave empty>
+Slow Query Patterns (MANDATORY)
 
-If patterns are NOT provided:
-- **Slow Pattern Evidence:** `NOT_PROVIDED`
-- **Similar To Slow Pattern:** `UNKNOWN`
-- Provide generic risk assessment only.
+Provide 1+ slow patterns below. AI MUST compare the query against them.
 
-#### Similarity Heuristics (practical)
-Mark `Similar To Slow Pattern = YES` if query shares 2+ of:
-- Same core join chain (same tables/items and join direction)
-- Same anti-pattern(s): `DISTINCT` with many joins, redundant join to same table, missing restrictive predicates, broad time-range filter, etc.
-- Same high-cardinality join point (e.g., relation table -> product -> promotion -> tag)
-- Same “select wide columns” with DISTINCT
-- Same predicate structure (e.g., status + date range + catalogVersion)
+Pattern List:
 
----
+Pattern ID: <PATTERN_1_NAME>
+Pattern Query:
 
-### C) FlexibleSearch-specific Notes (Hybris)
-- FlexibleSearch plans are DB-dependent; you still need DB `EXPLAIN` for certainty.
-- Always record:
-  - involved typecodes/items
-  - join keys (pk vs code/uid)
-  - whether query returns large result set (missing pagination)
+<slow pattern query>
+
+Why slow (notes): <short notes>
+
+Pattern ID: <PATTERN_2_NAME>
+Pattern Query:
+
+<slow pattern query>
+
+Why slow (notes): <short notes>
+
+TASKS (ONLY)
+Task A — Index Scan Check
+
+If execution plan evidence is provided:
+
+Decide INDEX_SCAN | FULL_SCAN | MIXED | UNKNOWN
+
+If no plan evidence:
+
+Output likelihood only (HIGH/MEDIUM/LOW) with structural reasons
+
+Never claim certainty without plan evidence.
+
+Task B — Slow Pattern Similarity Check
+
+Compare Query Under Review vs each slow pattern.
+
+Mark match if query shares 2+ of:
+
+same core join chain / same tables
+
+DISTINCT + many joins
+
+redundant join to same table
+
+weak predicates / missing pagination
+
+wide select columns
+
+OUTPUT (MANDATORY)
+A) Index Scan Result
+
+Plan Evidence: PROVIDED | NOT_PROVIDED
+
+Index Scan Result: INDEX_SCAN | FULL_SCAN | MIXED | UNKNOWN
+
+Index Scan Likelihood: HIGH | MEDIUM | LOW (required when Plan Evidence = NOT_PROVIDED)
+
+Reasoning: <bullet list of structural reasons>
+
+Actions to Verify: <exact steps: run EXPLAIN with params, check indexes on join/where columns, etc>
+
+B) Slow Pattern Match
+
+For EACH pattern:
+
+Pattern ID: <id>
+
+Similar: YES | NO | UNKNOWN
+
+Similarity Reasons: <mapping: joins/where/distinct/columns>
+
+Risk Level: LOW | MEDIUM | HIGH
+
+Recommendation: <rewrite / reduce joins / remove redundant join / add pagination / add index / split query / caching>
+
+C) Final Verdict
+
+Overall Risk: LOW | MEDIUM | HIGH
+
+One-line Summary: <short>
+
+RULES FOR AI (STRICT)
+
+No hallucination: if plan evidence is not provided, do NOT claim actual scan type.
+
+Be concrete: name join columns/predicates causing scan risk.
+
+Keep scope: do not review runtime exceptions / memory / general performance outside query.
