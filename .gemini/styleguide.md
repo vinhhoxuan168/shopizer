@@ -1,100 +1,82 @@
-# RISK REVIEW — JAVA (AI OUTPUT)
+## Query Review Add-on: Index Scan & Slow Query Pattern Match (MANDATORY)
 
-### Scope / Relation Evaluate
-- **Target Items / Types:** `Is32Promotion`
-- **Deep Review Package:** `com.aswatson.*`
+This section applies when reviewing SQL/FlexibleSearch queries.
 
+### A) Index Scan Check (Evidence-first)
 
-Review **ONLY** for the following risk categories:
-- Java Runtime Exceptions
-- Performance Impact
-- Memory Leaks
+#### Rule A1 — Evidence Required for Certainty
+You MUST NOT claim "uses index scan" / "full table scan" as a fact unless an execution plan is provided.
+Valid evidence:
+- `EXPLAIN` / `EXPLAIN ANALYZE` output
+- DB execution plan screenshot/text
+- Dynatrace/DB monitoring showing plan/hash
 
-Ignore style, naming, formatting, and business logic unless they directly cause risks below.
-Ignore any risk unless they relate to LIMIT review scope
+If evidence is NOT provided, you must output a likelihood assessment only.
 
----
+#### Output (MANDATORY)
+For each reviewed query, output:
 
+- **Index Scan Evidence:** `PROVIDED | NOT_PROVIDED`
+- **Index Scan Result:** `INDEX_SCAN | FULL_SCAN | UNKNOWN`  
+  (Use `UNKNOWN` when NOT_PROVIDED)
+- **Index Scan Likelihood:** `HIGH | MEDIUM | LOW` (required when NOT_PROVIDED)
+- **Reasoning:** `<concrete reasons based on query structure>`
+- **Action:** `<exact steps to verify/improve>`
 
-## CORE RULES (MANDATORY)
+#### Heuristics for Likelihood (when NOT_PROVIDED)
+Increase FULL_SCAN risk if any of the following is present:
+- Function applied on indexed column in WHERE/JOIN: `LOWER(col)`, `DATE(col)`, `CAST(col)`, `SUBSTR(col)`, etc.
+- Leading wildcard: `LIKE '%abc'`
+- OR conditions across different columns without supporting indexes
+- Missing/ineffective WHERE predicates (broad filter)
+- Join keys are not PK/unique or look non-indexed (code/uid without index)
+- Large LEFT JOIN chains + DISTINCT + wide SELECT
+- ORDER BY on non-indexed column, especially with LIMIT missing
+- Query filters on low-selectivity column only (status=1 without other filters)
+- Subqueries in hot path
 
-### Relation / Scope Gate
-For each issue you report, include:
-- **Relation Evaluate:** `Has | Not relate with Target Items / Types`
-- Explain briefly **when/why** it relates (or not).
-
-- Review MUST include method/class/implementation in prompt
-- Review MUST include 2-3 level dive into calling method/class/implementation belong to Deep Review Package
-
----
-
-
-## 1. Java Runtime Exceptions
-
-For EACH issue found, output:
-
-- **Location:** `<Class>:<Method>:<Line/Block>`
-- **Exception Type:** `<NPE | IndexOutOfBounds | ClassCast | IllegalState | etc>`
-- **Trigger Condition:** `<exact scenario>`
-- **Severity:** `LOW | MEDIUM | HIGH`
-- **Fix:** `<concrete code-level suggestion>`
-- **Relation Evaluate**: <Has | Not relate with Target Items / Types > <when/why it relate with Target Items / Types>
-
-If none found, state explicitly:
-> No concrete runtime exception risks identified.
-
----
-
-## 2. Performance Impact
-
-For EACH issue found, output:
-
-- **Location:** `<Class>:<Method>`
-- **Item/Table:** `Item | Table`
-- **Issue Type:** `<DB in loop | O(n²) | blocking | excessive allocation | etc>`
-- **Execution Context:** `<request | cronjob | background | OCC | promotion | etc>`
-- **Impact Level:** `LOW | MEDIUM | HIGH`
-- **Reason:** `<when/why it becomes slow>`
-- **Optimization:** `<specific technical fix>`
-- **Relation Evaluate**: <Has | Not relate with Target Items / Types > <when/why it relate with Target Items / Types>
-
-If none found, state explicitly:
-> No performance risks identified.
+Suggested Actions:
+- Ask for `EXPLAIN` plan for the exact query with representative params
+- Check indexes for join columns + where predicates
+- Rewrite predicates to avoid functions on columns
+- Add pagination / LIMIT where applicable
+- Reduce join breadth, remove redundant joins, narrow selected columns
 
 ---
 
-## 3. Memory Leaks
+### B) Slow Query Pattern Match (Template-driven)
 
-For EACH issue found, output:
+#### Rule B1 — Slow Query Templates Input
+If the review template provides "Slow Query Patterns" (reference queries), you MUST compare the PR query against them.
 
-- **Location:** `<Class>:<Field/Method>`
-- **Leak Pattern:** `<static reference | unbounded collection | ThreadLocal | listener | cache>`
-- **Why It Leaks:** `<GC reasoning>`
-- **Runtime Scenario:** `<long-running app | high traffic | cronjob>`
-- **Severity:** `LOW | MEDIUM | HIGH`
-- **Fix:** `<exact mitigation>`
-- **Relation Evaluate**: <Has | Not relate with Target Items / Types > <when/why it relate with Target Items / Types>
+#### Output (MANDATORY)
+For each reviewed query, output:
 
+- **Slow Pattern Evidence:** `PROVIDED | NOT_PROVIDED`
+- **Similar To Slow Pattern:** `YES | NO | UNKNOWN`
+- **Matched Pattern ID:** `<pattern name/id>` or `N/A`
+- **Similarity Reason:** `<concrete mapping: joins/where/group/distinct>`
+- **Risk Level:** `LOW | MEDIUM | HIGH`
+- **Recommendation:** `<rewrite / index / split query / caching / pagination>`
 
-If none found, state explicitly:
-> No memory leak risks identified.
+If patterns are NOT provided:
+- **Slow Pattern Evidence:** `NOT_PROVIDED`
+- **Similar To Slow Pattern:** `UNKNOWN`
+- Provide generic risk assessment only.
+
+#### Similarity Heuristics (practical)
+Mark `Similar To Slow Pattern = YES` if query shares 2+ of:
+- Same core join chain (same tables/items and join direction)
+- Same anti-pattern(s): `DISTINCT` with many joins, redundant join to same table, missing restrictive predicates, broad time-range filter, etc.
+- Same high-cardinality join point (e.g., relation table -> product -> promotion -> tag)
+- Same “select wide columns” with DISTINCT
+- Same predicate structure (e.g., status + date range + catalogVersion)
 
 ---
 
-## 4. Summary
-
-| Category | Issues | Highest Severity |
-|--------|--------|------------------|
-| Runtime Exceptions | X | LOW/MEDIUM/HIGH |
-| Performance | X | LOW/MEDIUM/HIGH |
-| Memory Leaks | X | LOW/MEDIUM/HIGH |
-
-**PR Verdict:** `APPROVE | APPROVE WITH WARNINGS | BLOCK`  
-**Reason:** `<one-line justification>`
-
----
-
-### Rules for AI
-- Be code-specific, no speculation
-- Do NOT say “potential issue” without trigger
-- Do NOT hallucinate missing code
+### C) FlexibleSearch-specific Notes (Hybris)
+- FlexibleSearch plans are DB-dependent; you still need DB `EXPLAIN` for certainty.
+- Always record:
+  - involved typecodes/items
+  - join keys (pk vs code/uid)
+  - whether query returns large result set (missing pagination)
