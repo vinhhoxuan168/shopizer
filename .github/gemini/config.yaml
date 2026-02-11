@@ -1,0 +1,4 @@
+rules:
+  - id: performance-optimization-guide
+    description: "Rules for detecting Index Scans and Slow Patterns. References performance.md"
+    styleguide: "performance.md"
