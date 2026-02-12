@@ -1,0 +1,56 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+ Copyright (c) 2019 SAP SE or an SAP affiliate company. All rights reserved.
+-->
+<!--
+	ATTENTION: This is just an example file. You have to edit it according to your needs.
+-->
+
+<items 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" 
+			xsi:noNamespaceSchemaLocation="items.xsd">
+	<itemtypes>
+		<itemtype code="Is32Bucket" autocreate="false" generate="false">
+			<indexes>
+				<index name="IDX_IS32BUCKET_MODIFIEDTIME">
+					<key attribute="modifiedtime"/>
+				</index>
+			</indexes>
+		</itemtype>
+		<itemtype code="Is32PromoItem" autocreate="false" generate="false">
+			<indexes>
+				<index name="IDX_IS32PROMOITEM_MODIFIEDTIME">
+					<key attribute="modifiedtime"/>
+				</index>
+			</indexes>
+		</itemtype>
+		<itemtype code="Is32PromotionActivity" autocreate="false" generate="false">
+			<indexes>
+				<index name="IDX_IS32PROMOTIONACTIVITY_MODIFIEDTIME">
+					<key attribute="modifiedtime"/>
+				</index>
+			</indexes>
+		</itemtype>
+		<itemtype code="Is32PromotionSegment" autocreate="false" generate="false">
+			<indexes>
+				<index name="IDX_IS32PROMOTIONSEGMENT_MODIFIEDTIME">
+					<key attribute="modifiedtime"/>
+				</index>
+			</indexes>
+		</itemtype>
+		<itemtype code="Is32Reward" autocreate="false" generate="false">
+			<indexes>
+				<index name="IDX_IS32REWARD_MODIFIEDTIME">
+					<key attribute="modifiedtime"/>
+				</index>
+			</indexes>
+		</itemtype>
+		<itemtype code="Is32Threshold" autocreate="false" generate="false">
+			<indexes>
+				<index name="IDX_IS32THRESHOLD_MODIFIEDTIME">
+					<key attribute="modifiedtime"/>
+				</index>
+			</indexes>
+		</itemtype>
+		
+	</itemtypes>
+</items>
