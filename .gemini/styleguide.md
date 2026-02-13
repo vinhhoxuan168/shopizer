@@ -13,34 +13,32 @@ Flag the following patterns as "Potential Slow Performance":
 - **N+1 Queries**: Detecting loops that execute a database query inside each iteration.
 - **Mismatched Data Types**: Comparing a string column with a numeric value (causes implicit conversion and ignores index).
 
-## 3. Sample slow query Patterns
+## 3 JAVA RUNTIME EXCEPTION
+Scan for **concrete, triggerable** runtime errors only:
+- Null dereference (NPE)
+- Unsafe cast
+- `Optional.get()` without presence check
+- Collection access without size/bound checks
+- Illegal or invalid state in runtime flow
+
+Flag issues only when a **real execution path** exists.  
+Avoid speculative or “might happen” warnings.
+
+
+## 4 MEMORY LEAK & MEMORY GROWTH
+Scan for long-lived memory retention:
+- Static references holding runtime objects
+- Listeners or callbacks not released
+- `ThreadLocal` not cleared
+- Unbounded collections or caches without eviction
+- Promotion context retaining large objects across executions
+
+Flag only when objects outlive their expected lifecycle.  
+Explain why GC cannot reclaim them and how to fix it.
+
+
+## 5. Sample slow query Patterns
 Query pattern that cause performance issue:
 - '
-SELECT p.promotion_id, COUNT(*) AS cnt
-FROM promotion p
-JOIN couponredemption cr ON cr.coupon_id = p.coupon_id
-JOIN redemption_event e  ON e.redemption_id = cr.id
-GROUP BY p.promotion_id;
-'
-- '
-SELECT *
-FROM coupon c
-LEFT JOIN couponredemption cr ON cr.coupon_id = c.id
-WHERE cr.user_id = :userId; 
-'
-- '
-SELECT *
-FROM T
-WHERE FORMAT(T.created_at, 'yyyy-MM-dd') = :d;
-'
-- '
-SELECT *
-FROM products p
-WHERE p.catalogVersion = :cv
-   OR p.approvalStatus = 'APPROVED';
-'
-- '
-SELECT *
-FROM users u
-WHERE u.name LIKE '%' || :kw || '%';
+SELECT accountId, siebelAcctId, threshold, SUM(isUsed) as orderedAmt FROM (SELECT item_t6.p_increasememberaccountid as accountId, item_t12.p_siebelacctid AS siebelAcctId, item_t12.p_threshold AS threshold, CASE WHEN item_t4.PK IS NULL THEN '***' ELSE '***' END as isUsed FROM is32promotion item_t0 JOIN is32promotiontag item_t1 ON item_t0.p_promotiontag = item_t1.PK JOIN coupon item_t2 ON item_t2.p_couponid = item_t0.p_redeemdigitalcoupon LEFT JOIN couponredemption item_t3 ON item_t2.PK = item_t3.p_coupon LEFT JOIN users item_t4 ON ( item_t3.p_user = item_t4.PK AND item_t4.PK = ?) JOIN enumerationvalues8e item_t5 ON item_t1.p_elabpromotiondisplaytype = item_t5.PK JOIN is32reward item_t6 ON item_t0.p_uid = item_t6.p_promotionuid JOIN enumerationvalues8e item_t7 ON item_t6.p_rewardtype = item_t7.PK JOIN is32promotionactivity item_t8 ON item_t8.p_promotionuid = item_t0.p_uid JOIN is32bucket item_t9 ON item_t0.p_uid = item_t9.p_promotionuid JOIN is32promoitem item_t10 ON item_t10.p_bucketuid = item_t9.uniqueid JOIN products item_t11 ON item_t11.p_code = item_t10.p_itemcode JOIN estamptier item_t12 ON item_t6.p_increasememberaccountid = item_t12.p_accountid WHERE (( item_t5.Code = '***') AND item_t7.Code = '***' AND item_t0.p_status = '***' and item_t0.p_suspended = '***' AND item_t11.p_catalogversion = ? AND item_t0.p_startdate <= ? AND item_t0.p_enddate > ? AND FORMAT( item_t8.p_starttime , '***') <= FORMAT(?, '***') AND FORMAT( item_t8.p_endtime , '***') > FORMAT(?, '***')) AND ((item_t0.TypePkString=? AND item_t1.TypePkString=? AND item_t2.TypePkString IN (?,?,..., ?) AND (item_t3.TypePkString IS NULL OR ( item_t3.TypePkString=? ) ) AND (item_t4.TypePkString IS NULL OR item_t4.TypePkString IN (?,?,..., ?)) AND item_t5.TypePkString=? AND item_t6.TypePkString=? AND item_t7.TypePkString=? AND item_t8.TypePkString=? AND item_t9.TypePkString=? AND item_t10.TypePkString=? AND item_t11.TypePkString IN (?,?,..., ?) AND ((( item_t11.p_onlinedate IS NULL OR item_t11.p_onlinedate <= ?) AND ( item_t11.p_offlinedate IS NULL OR item_t11.p_offlinedate >= ?)) AND ( item_t11.p_catalogversion IN (?,?,..., ?)) AND ( item_t11.p_approvalstatus = '***' )) AND item_t12.TypePkString=? ))) accountQuota GROUP BY accountId, siebelAcctId, threshold order by accountId
 '
