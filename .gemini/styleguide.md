@@ -5,6 +5,8 @@ When reviewing code that includes SQL queries or Hybris Flexible Search or ORM c
 - **Requirement**: Any new query must use `Index Seek` or `Index Scan` on a limited range. Full `Index Scan` or `Table Scan` on large tables is prohibited. Scan all *-items.xml files to check existing index for query and suggest for index table attribute
 - **Detection**: Flag queries that use `SELECT *` without a `WHERE` clause on indexed columns.
 - **Warning**: If a query filters by a column that is not part of an index define in files with Hybris items file with pattern `*-items.xml` (check schema definitions if available), suggest adding an index or refactoring.
+- **Priority**: VERY HIGH
+
 
 ## 2. Slow Response Patterns
 Flag the following patterns as "Potential Slow Performance":
@@ -23,7 +25,7 @@ Scan for **concrete, triggerable** runtime errors only:
 
 Flag issues only when a **real execution path** exists.  
 Avoid speculative or “might happen” warnings.
-
+- **Priority**: HIGH
 
 ## 4 MEMORY LEAK & MEMORY GROWTH
 Scan for long-lived memory retention:
