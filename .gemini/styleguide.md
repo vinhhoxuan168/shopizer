@@ -15,31 +15,31 @@ Flag the following patterns as "Potential Slow Performance":
 
 ## 3. Sample slow query Patterns
 Query pattern that cause performance issue:
-'
+- '
 SELECT p.promotion_id, COUNT(*) AS cnt
 FROM promotion p
 JOIN couponredemption cr ON cr.coupon_id = p.coupon_id
 JOIN redemption_event e  ON e.redemption_id = cr.id
 GROUP BY p.promotion_id;
 '
-'
+- '
 SELECT *
 FROM coupon c
 LEFT JOIN couponredemption cr ON cr.coupon_id = c.id
 WHERE cr.user_id = :userId; 
 '
-'
+- '
 SELECT *
 FROM T
 WHERE FORMAT(T.created_at, 'yyyy-MM-dd') = :d;
 '
-'
+- '
 SELECT *
 FROM products p
 WHERE p.catalogVersion = :cv
    OR p.approvalStatus = 'APPROVED';
 '
-'
+- '
 SELECT *
 FROM users u
 WHERE u.name LIKE '%' || :kw || '%';
