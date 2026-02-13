@@ -4,7 +4,7 @@
 When reviewing code that includes SQL queries or Hybris Flexible Search or ORM calls (like TypeORM, Prisma, SQLAlchemy, Hibernate):
 - **Requirement**: Any new query must use `Index Seek` or `Index Scan` on a limited range. Full `Index Scan` or `Table Scan` on large tables is prohibited. Scan all *-items.xml files to check existing index for query and suggest for index attribute
 - **Detection**: Flag queries that use `SELECT *` without a `WHERE` clause on indexed columns.
-- **Warning**: If a query filters by a column that is not part of an index define in files with Hybris items file with pattern `*-items.xml` (check schema definitions if available), suggest adding an index or refactoring.
+- **Warning**: If a query filters by a column that is not part of an index define in files with Hybris items file with pattern `*-items.xml` (check schema definitions if available), clearly listing suggest adding an index or refactoring.
 
 ## 2. Slow Response Patterns
 Flag the following patterns as "Potential Slow Performance":
