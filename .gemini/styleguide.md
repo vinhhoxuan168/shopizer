@@ -52,21 +52,17 @@ LEFT JOIN users u
        ON cr.p_user = u.PK
       AND u.PK = :userPk
 WHERE
-    -- non-sargable time compare (cố tình)
     FORMAT(pa.p_starttime, :fmt) <= FORMAT(:nowTime, :fmt)
 AND FORMAT(pa.p_endtime,   :fmt) >  FORMAT(:nowTime, :fmt)
 
-    -- non-sargable date compare (cố tình)
 AND CAST(p.p_startdate AS VARCHAR(30)) <= CAST(:now AS VARCHAR(30))
 AND CAST(p.p_enddate   AS VARCHAR(30)) >  CAST(:now AS VARCHAR(30))
 
-    -- OR làm hỏng index / plan (cố tình)
 AND (
         p.p_status = :status
      OR p.p_suspended = :suspended
     )
 
-    -- lọc product “nặng”
 AND prod.p_catalogversion = :catalogVersion
 AND (
         (prod.p_onlinedate  IS NULL OR prod.p_onlinedate  <= :now)
@@ -74,11 +70,9 @@ AND (
     )
 AND prod.p_approvalstatus = '***'
 
-    -- IN list dài (cố tình)
 AND p.TypePkString IN (:promoType1,:promoType2,:promoType3,:promoType4,:promoType5,:promoType6,:promoType7,:promoType8,:promoType9,:promoType10)
 AND prod.TypePkString IN (:prodType1,:prodType2,:prodType3,:prodType4,:prodType5,:prodType6,:prodType7,:prodType8,:prodType9,:prodType10,:prodType11,:prodType12)
 
-    -- LEFT JOIN bị “đụng” điều kiện kiểu dễ lệch cardinality (cố tình)
 AND (cr.TypePkString IS NULL OR cr.TypePkString = :couponRedemptionType)
 AND (u.TypePkString IS NULL OR u.TypePkString IN (:userType1,:userType2,:userType3,:userType4,:userType5))
 GROUP BY
@@ -100,7 +94,6 @@ SELECT DISTINCT
         WHEN LOWER(prod.p_code) LIKE '%' || LOWER(:kw) || '%' THEN 1
         ELSE 0
     END AS score,
-    -- correlated subquery (cố tình)
     (SELECT COUNT(*)
      FROM is32promoitem pi
      JOIN is32bucket b ON pi.p_bucketuid = b.uniqueid
@@ -110,7 +103,6 @@ SELECT DISTINCT
        AND p.p_startdate <= :now
        AND p.p_enddate > :now
     ) AS activePromoCnt,
-    -- correlated subquery + EXISTS/LIKE (cố tình)
     (SELECT MAX(cr.p_redeemedtime)
      FROM couponredemption cr
      JOIN coupon c ON cr.p_coupon = c.PK
@@ -129,11 +121,9 @@ LEFT JOIN productreferences pr
 LEFT JOIN products prod2
        ON prod2.PK = pr.p_target
 WHERE
-    -- leading wildcard LIKE (cố tình)
     LOWER(prod.p_name) LIKE '%' || LOWER(:kw) || '%'
  OR LOWER(prod.p_code) LIKE '%' || LOWER(:kw) || '%'
 
-    -- OR + NULL checks (cố tình)
 AND (
         prod.p_onlinedate IS NULL
      OR prod.p_onlinedate <= :now
@@ -143,10 +133,8 @@ AND (
      OR prod.p_offlinedate >= :now
     )
 
-    -- IN list dài (cố tình)
 AND prod.p_catalogversion IN (:cv1,:cv2,:cv3,:cv4,:cv5,:cv6,:cv7,:cv8,:cv9,:cv10)
 
-    -- join thêm để phình row + DISTINCT để “chữa cháy” (cố tình)
 AND (prod2.PK IS NULL OR prod2.p_approvalstatus = '***')
 ORDER BY
     score DESC,
