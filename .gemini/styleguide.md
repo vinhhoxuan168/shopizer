@@ -26,7 +26,7 @@ GROUP BY p.promotion_id;
 SELECT *
 FROM coupon c
 LEFT JOIN couponredemption cr ON cr.coupon_id = c.id
-WHERE cr.user_id = :userId;   -- boom: LEFT JOIN mất ý nghĩa, plan khác hẳn
+WHERE cr.user_id = :userId; 
 '
 '
 SELECT *
